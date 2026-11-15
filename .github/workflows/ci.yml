@@ -1,0 +1,47 @@
+name: EchoStream CI Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate-and-test:
+    name: Lint, Analyze & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Verify Flutter & Dart Version
+        run: flutter --version
+
+      - name: Install Project Dependencies
+        run: flutter pub get
+
+      - name: Verify Dart Code Formatting
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Run Flutter Static Analysis
+        run: flutter analyze --no-fatal-infos
+
+      - name: Execute Automated Test Suite with Coverage
+        run: flutter test --coverage
+
+      - name: Run Autonomous Sprint Gate Script
+        run: dart run tool/sprint_gate.dart
