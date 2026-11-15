@@ -30,7 +30,9 @@ Future<void> main() async {
     }
   }
   if (emojiCount > 0) {
-    stderr.writeln('FAILURE: Anti-AI Hygiene violated ($emojiCount files contain emojis).');
+    stderr.writeln(
+      'FAILURE: Anti-AI Hygiene violated ($emojiCount files contain emojis).',
+    );
     exit(1);
   }
   stdout.writeln('SUCCESS: Zero emojis found across codebase.\n');
@@ -44,7 +46,7 @@ Future<void> main() async {
     _GateStep(
       name: 'Dart Code Formatting',
       executable: dartCmd,
-      arguments: ['format', 'lib', 'test'],
+      arguments: ['format', 'lib', 'test', 'tool'],
     ),
     _GateStep(
       name: 'Flutter Static Analysis',
@@ -59,7 +61,9 @@ Future<void> main() async {
   ];
 
   for (final step in steps) {
-    stdout.writeln('Running: ${step.name} [${step.executable} ${step.arguments.join(" ")}]');
+    stdout.writeln(
+      'Running: ${step.name} [${step.executable} ${step.arguments.join(" ")}]',
+    );
     final stopwatch = Stopwatch()..start();
 
     final result = await Process.run(

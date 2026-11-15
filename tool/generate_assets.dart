@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math';
+
 import 'package:image/image.dart' as img;
 
 void main() {
@@ -93,10 +94,26 @@ void main() {
   );
 
   // 3. Host Avatars (256x256)
-  generateAvatar('assets/images/avatar_host_1.png', img.ColorRgb8(56, 189, 248), 'DR');
-  generateAvatar('assets/images/avatar_host_2.png', img.ColorRgb8(168, 85, 247), 'SH');
-  generateAvatar('assets/images/avatar_host_3.png', img.ColorRgb8(34, 197, 94), 'EL');
-  generateAvatar('assets/images/avatar_host_4.png', img.ColorRgb8(244, 63, 94), 'MK');
+  generateAvatar(
+    'assets/images/avatar_host_1.png',
+    img.ColorRgb8(56, 189, 248),
+    'DR',
+  );
+  generateAvatar(
+    'assets/images/avatar_host_2.png',
+    img.ColorRgb8(168, 85, 247),
+    'SH',
+  );
+  generateAvatar(
+    'assets/images/avatar_host_3.png',
+    img.ColorRgb8(34, 197, 94),
+    'EL',
+  );
+  generateAvatar(
+    'assets/images/avatar_host_4.png',
+    img.ColorRgb8(244, 63, 94),
+    'MK',
+  );
 
   print('Assets generation complete!');
 }
@@ -130,7 +147,13 @@ void generateAppIcon(String path) {
   }
 
   // Draw inner dark circle to create ring
-  img.fillCircle(image, x: cx, y: cy, radius: 125, color: img.ColorRgb8(10, 14, 23));
+  img.fillCircle(
+    image,
+    x: cx,
+    y: cy,
+    radius: 125,
+    color: img.ColorRgb8(10, 14, 23),
+  );
 
   // Precision condenser capsule glyph (vertical pill with mesh lines)
   final capsuleColor = img.ColorRgb8(56, 189, 248);
@@ -139,12 +162,33 @@ void generateAppIcon(String path) {
   final capsuleLeft = cx - 35;
   final capsuleRight = cx + 35;
 
-  img.fillRect(image, x1: capsuleLeft, y1: capsuleTop, x2: capsuleRight, y2: capsuleBottom, color: img.ColorRgb8(30, 41, 59));
-  img.drawRect(image, x1: capsuleLeft, y1: capsuleTop, x2: capsuleRight, y2: capsuleBottom, color: capsuleColor);
+  img.fillRect(
+    image,
+    x1: capsuleLeft,
+    y1: capsuleTop,
+    x2: capsuleRight,
+    y2: capsuleBottom,
+    color: img.ColorRgb8(30, 41, 59),
+  );
+  img.drawRect(
+    image,
+    x1: capsuleLeft,
+    y1: capsuleTop,
+    x2: capsuleRight,
+    y2: capsuleBottom,
+    color: capsuleColor,
+  );
 
   // Mesh horizontal lines
   for (int y = capsuleTop + 10; y < capsuleBottom - 10; y += 10) {
-    img.drawLine(image, x1: capsuleLeft + 5, y1: y, x2: capsuleRight - 5, y2: y, color: img.ColorRgb8(125, 211, 252));
+    img.drawLine(
+      image,
+      x1: capsuleLeft + 5,
+      y1: y,
+      x2: capsuleRight - 5,
+      y2: y,
+      color: img.ColorRgb8(125, 211, 252),
+    );
   }
 
   // Waveform pulse bars at bottom
@@ -197,8 +241,22 @@ void generateCover(
   } else if (patternType == 1) {
     // Grid geometric mesh
     for (int i = 50; i < size; i += 40) {
-      img.drawLine(image, x1: i, y1: 50, x2: i, y2: size - 50, color: secondaryColor);
-      img.drawLine(image, x1: 50, y1: i, x2: size - 50, y2: i, color: secondaryColor);
+      img.drawLine(
+        image,
+        x1: i,
+        y1: 50,
+        x2: i,
+        y2: size - 50,
+        color: secondaryColor,
+      );
+      img.drawLine(
+        image,
+        x1: 50,
+        y1: i,
+        x2: size - 50,
+        y2: i,
+        color: secondaryColor,
+      );
     }
     img.drawCircle(image, x: cx, y: cy, radius: 80, color: accentColor);
   } else if (patternType == 2) {
@@ -208,7 +266,13 @@ void generateCover(
         final y = (cy + i * 25 + sin(x * 0.03 + i) * 35).round();
         if (y >= 0 && y < size) {
           image.setPixelRgb(x, y, accentColor.r, accentColor.g, accentColor.b);
-          image.setPixelRgb(x, (y + 1).clamp(0, size - 1), secondaryColor.r, secondaryColor.g, secondaryColor.b);
+          image.setPixelRgb(
+            x,
+            (y + 1).clamp(0, size - 1),
+            secondaryColor.r,
+            secondaryColor.g,
+            secondaryColor.b,
+          );
         }
       }
     }
@@ -216,10 +280,24 @@ void generateCover(
     // Synthwave horizon sun
     img.fillCircle(image, x: cx, y: cy, radius: 100, color: accentColor);
     for (int y = cy - 20; y < cy + 100; y += 12) {
-      img.fillRect(image, x1: cx - 110, y1: y, x2: cx + 110, y2: y + 4, color: baseColor);
+      img.fillRect(
+        image,
+        x1: cx - 110,
+        y1: y,
+        x2: cx + 110,
+        y2: y + 4,
+        color: baseColor,
+      );
     }
     for (int x = 60; x <= size - 60; x += 30) {
-      img.drawLine(image, x1: cx, y1: cy + 40, x2: x, y2: size - 40, color: secondaryColor);
+      img.drawLine(
+        image,
+        x1: cx,
+        y1: cy + 40,
+        x2: x,
+        y2: size - 40,
+        color: secondaryColor,
+      );
     }
   } else {
     // Tech node constellation
@@ -231,16 +309,43 @@ void generateCover(
     for (int i = 0; i < nodes.length; i++) {
       for (int j = i + 1; j < nodes.length; j++) {
         if (nodes[i].distanceTo(nodes[j]) < 130) {
-          img.drawLine(image, x1: nodes[i].x, y1: nodes[i].y, x2: nodes[j].x, y2: nodes[j].y, color: secondaryColor);
+          img.drawLine(
+            image,
+            x1: nodes[i].x,
+            y1: nodes[i].y,
+            x2: nodes[j].x,
+            y2: nodes[j].y,
+            color: secondaryColor,
+          );
         }
       }
-      img.fillCircle(image, x: nodes[i].x, y: nodes[i].y, radius: 6, color: accentColor);
+      img.fillCircle(
+        image,
+        x: nodes[i].x,
+        y: nodes[i].y,
+        radius: 6,
+        color: accentColor,
+      );
     }
   }
 
   // Draw sleek branding bar
-  img.fillRect(image, x1: 40, y1: size - 85, x2: size - 40, y2: size - 45, color: img.ColorRgb8(15, 23, 42));
-  img.drawRect(image, x1: 40, y1: size - 85, x2: size - 40, y2: size - 45, color: accentColor);
+  img.fillRect(
+    image,
+    x1: 40,
+    y1: size - 85,
+    x2: size - 40,
+    y2: size - 45,
+    color: img.ColorRgb8(15, 23, 42),
+  );
+  img.drawRect(
+    image,
+    x1: 40,
+    y1: size - 85,
+    x2: size - 40,
+    y2: size - 45,
+    color: accentColor,
+  );
 
   File(path).writeAsBytesSync(img.encodePng(image));
 }
@@ -253,14 +358,26 @@ void generateAvatar(String path, img.ColorRgb8 accent, String initials) {
   final cy = size ~/ 2;
 
   // Background circle
-  img.fillCircle(image, x: cx, y: cy, radius: 120, color: img.ColorRgb8(30, 41, 59));
+  img.fillCircle(
+    image,
+    x: cx,
+    y: cy,
+    radius: 120,
+    color: img.ColorRgb8(30, 41, 59),
+  );
   img.drawCircle(image, x: cx, y: cy, radius: 120, color: accent);
   img.drawCircle(image, x: cx, y: cy, radius: 114, color: accent);
 
   // Stylized head & shoulders
   img.fillCircle(image, x: cx, y: cy - 25, radius: 45, color: accent);
   img.fillCircle(image, x: cx, y: cy + 110, radius: 85, color: accent);
-  img.fillCircle(image, x: cx, y: cy + 130, radius: 75, color: img.ColorRgb8(15, 23, 42));
+  img.fillCircle(
+    image,
+    x: cx,
+    y: cy + 130,
+    radius: 75,
+    color: img.ColorRgb8(15, 23, 42),
+  );
 
   File(path).writeAsBytesSync(img.encodePng(image));
 }
