@@ -111,5 +111,61 @@ void main() {
       expect(mockAudioRepo.clips.length, 1);
       expect(mockAudioRepo.clips.first.timestampSec, 120);
     });
+
+    test('6. Cycles loop mode (off -> track -> abRepeat -> off)', () async {
+      expect(audioPlayerBloc.state.loopMode, LoopMode.off);
+
+      audioPlayerBloc.add(CycleLoopModeEvent());
+      await Future.delayed(const Duration(milliseconds: 20));
+      expect(audioPlayerBloc.state.loopMode, LoopMode.track);
+
+      audioPlayerBloc.add(CycleLoopModeEvent());
+      await Future.delayed(const Duration(milliseconds: 20));
+      expect(audioPlayerBloc.state.loopMode, LoopMode.abRepeat);
+
+      audioPlayerBloc.add(CycleLoopModeEvent());
+      await Future.delayed(const Duration(milliseconds: 20));
+      expect(audioPlayerBloc.state.loopMode, LoopMode.off);
+    });
+
+    test('7. Sets A-B loop markers Point A and Point B', () async {
+      final track = mockAudioRepo.tracks.first;
+      audioPlayerBloc.add(LoadTrackEvent(track, autoPlay: false));
+      await Future.delayed(const Duration(milliseconds: 20));
+
+      audioPlayerBloc.add(const SetAbLoopPointAEvent(30));
+      await Future.delayed(const Duration(milliseconds: 20));
+      expect(audioPlayerBloc.state.abLoopStartSec, 30);
+      expect(audioPlayerBloc.state.loopMode, LoopMode.abRepeat);
+
+      audioPlayerBloc.add(const SetAbLoopPointBEvent(60));
+      await Future.delayed(const Duration(milliseconds: 20));
+      expect(audioPlayerBloc.state.abLoopEndSec, 60);
+      expect(audioPlayerBloc.state.isAbLoopValid, true);
+
+      audioPlayerBloc.add(ClearAbLoopEvent());
+      await Future.delayed(const Duration(milliseconds: 20));
+      expect(audioPlayerBloc.state.loopMode, LoopMode.off);
+      expect(audioPlayerBloc.state.abLoopStartSec, null);
+      expect(audioPlayerBloc.state.abLoopEndSec, null);
+    });
+
+    test(
+      '8. Ticker automatically loops to Point A upon reaching Point B',
+      () async {
+        final track = mockAudioRepo.tracks.first;
+        audioPlayerBloc.add(LoadTrackEvent(track, autoPlay: true));
+        audioPlayerBloc.add(const SetAbLoopPointAEvent(10));
+        audioPlayerBloc.add(const SetAbLoopPointBEvent(20));
+        audioPlayerBloc.add(const SeekPositionEvent(19));
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        // Trigger ticker tick at boundary
+        audioPlayerBloc.add(TickerTickEvent());
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        expect(audioPlayerBloc.state.currentPositionSec, 10);
+      },
+    );
   });
 }

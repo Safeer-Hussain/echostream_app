@@ -239,7 +239,7 @@ class _SpatialPlayerDeckViewState extends State<SpatialPlayerDeckView> {
                             ),
                           ),
                           const SizedBox(height: 8.0),
-                          _buildScrubber(context, currentPos, duration),
+                          _buildScrubber(context, state, currentPos, duration),
                           const SizedBox(height: 6.0),
                           _buildPlaybackControls(
                             context,
@@ -442,7 +442,7 @@ class _SpatialPlayerDeckViewState extends State<SpatialPlayerDeckView> {
                     ],
                   ),
                   const SizedBox(height: 12.0),
-                  _buildScrubber(context, currentPos, duration),
+                  _buildScrubber(context, state, currentPos, duration),
                   const SizedBox(height: 8.0),
                   _buildPlaybackControls(context, state, track, currentPos),
                   const SizedBox(height: 16.0),
@@ -457,7 +457,12 @@ class _SpatialPlayerDeckViewState extends State<SpatialPlayerDeckView> {
     );
   }
 
-  Widget _buildScrubber(BuildContext context, int currentPos, int duration) {
+  Widget _buildScrubber(
+    BuildContext context,
+    AudioPlayerState state,
+    int currentPos,
+    int duration,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
@@ -467,9 +472,13 @@ class _SpatialPlayerDeckViewState extends State<SpatialPlayerDeckView> {
             trackHeight: 3.5,
             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
             overlayShape: const RoundSliderOverlayShape(overlayRadius: 14.0),
-            activeTrackColor: colorScheme.primary,
+            activeTrackColor: state.loopMode == LoopMode.abRepeat
+                ? colorScheme.secondary
+                : colorScheme.primary,
             inactiveTrackColor: colorScheme.surfaceContainerHighest,
-            thumbColor: colorScheme.primary,
+            thumbColor: state.loopMode == LoopMode.abRepeat
+                ? colorScheme.secondary
+                : colorScheme.primary,
           ),
           child: Slider(
             value: currentPos.toDouble().clamp(0.0, duration.toDouble()),
@@ -495,6 +504,25 @@ class _SpatialPlayerDeckViewState extends State<SpatialPlayerDeckView> {
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),
+              if (state.loopMode == LoopMode.abRepeat && state.isAbLoopValid)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6.0,
+                    vertical: 1.0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(4.0),
+                  ),
+                  child: Text(
+                    'Loop ${_formatTime(state.abLoopStartSec!)} - ${_formatTime(state.abLoopEndSec!)}',
+                    style: TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                ),
               Text(
                 _formatTime(duration),
                 style: TextStyle(
@@ -506,7 +534,130 @@ class _SpatialPlayerDeckViewState extends State<SpatialPlayerDeckView> {
             ],
           ),
         ),
+        if (state.loopMode == LoopMode.abRepeat)
+          _buildAbLoopControlBar(context, state, currentPos),
       ],
+    );
+  }
+
+  Widget _buildAbLoopControlBar(
+    BuildContext context,
+    AudioPlayerState state,
+    int currentPos,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final bloc = context.read<AudioPlayerBloc>();
+
+    final start = state.abLoopStartSec;
+    final end = state.abLoopEndSec;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6.0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(8.0),
+          border: Border.all(
+            color: state.isAbLoopValid
+                ? colorScheme.secondary.withOpacity(0.5)
+                : colorScheme.outlineVariant,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.all_inclusive_rounded,
+                  size: 14.0,
+                  color: colorScheme.secondary,
+                ),
+                const SizedBox(width: 6.0),
+                Text(
+                  start != null ? 'A: ${_formatTime(start)}' : 'A: Not set',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(width: 8.0),
+                Text(
+                  end != null ? 'B: ${_formatTime(end)}' : 'B: Not set',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                InkWell(
+                  onTap: () => bloc.add(SetAbLoopPointAEvent(currentPos)),
+                  borderRadius: BorderRadius.circular(4.0),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6.0,
+                      vertical: 2.0,
+                    ),
+                    child: Text(
+                      'Set A',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4.0),
+                InkWell(
+                  onTap: () => bloc.add(SetAbLoopPointBEvent(currentPos)),
+                  borderRadius: BorderRadius.circular(4.0),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6.0,
+                      vertical: 2.0,
+                    ),
+                    child: Text(
+                      'Set B',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ),
+                if (start != null || end != null) ...[
+                  const SizedBox(width: 4.0),
+                  InkWell(
+                    onTap: () => bloc.add(ClearAbLoopEvent()),
+                    borderRadius: BorderRadius.circular(4.0),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4.0,
+                        vertical: 2.0,
+                      ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 14.0,
+                        color: colorScheme.error,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -562,6 +713,26 @@ class _SpatialPlayerDeckViewState extends State<SpatialPlayerDeckView> {
           icon: const Icon(Icons.forward_30_rounded, size: 28.0),
           color: colorScheme.onSurface,
           onPressed: () => bloc.add(const SkipForwardEvent(seconds: 30)),
+        ),
+        // Loop Mode Selector (Off -> Track -> A-B)
+        IconButton(
+          icon: Icon(
+            state.loopMode == LoopMode.off
+                ? Icons.repeat_rounded
+                : state.loopMode == LoopMode.track
+                ? Icons.repeat_one_rounded
+                : Icons.repeat_on_rounded,
+            size: 24.0,
+          ),
+          color: state.loopMode == LoopMode.off
+              ? colorScheme.onSurfaceVariant
+              : colorScheme.primary,
+          tooltip: state.loopMode == LoopMode.off
+              ? 'Loop: Off'
+              : state.loopMode == LoopMode.track
+              ? 'Loop: Track'
+              : 'Loop: A-B Range',
+          onPressed: () => bloc.add(CycleLoopModeEvent()),
         ),
         IconButton(
           icon: const Icon(Icons.queue_music_rounded, size: 24.0),

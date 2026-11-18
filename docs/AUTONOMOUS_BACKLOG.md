@@ -134,3 +134,10 @@ This document outlines the 25 granular engineering sprints executed across the E
 - Configured `.github/workflows/ci.yml` for continuous integration on push and pull requests.
 - Finalized executive documentation (`PRD.md`, `README.md`, `AUTONOMOUS_BACKLOG.md`).
 - Clean conventional commit and git remote synchronization.
+
+### Sprint 26: A/B Repeat Loop Engine & Audio Scrubber Precision Markers
+- Implemented `LoopMode` state machine (`off`, `track`, `abRepeat`) in `AudioPlayerBloc`.
+- Built interactive A-B loop marker controls with Point A, Point B, clear triggers, and active loop status pill.
+- Integrated seamless boundary loop-back in the deterministic playback ticker.
+- Added comprehensive unit tests validating loop transitions and boundary repeats.
+- Preserved 360dp landscape safety and zero hardcoded colors design system integrity.

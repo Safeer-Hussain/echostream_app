@@ -2,7 +2,7 @@ name: echo_stream_app
 description: "Flagship Lossless Spatial Audio Streaming Platform, Live Interactive Podcast & Audio Room Studio, Native 10-Band Hardware DSP Equalizer Bridge, Offline Media Vault, and On-Device AI Transcript Copilot in Flutter."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ^3.13.7

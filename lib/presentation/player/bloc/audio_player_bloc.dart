@@ -17,6 +17,8 @@ abstract class AudioPlayerEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+enum LoopMode { off, track, abRepeat }
+
 class LoadTrackEvent extends AudioPlayerEvent {
   final AudioTrack track;
   final bool autoPlay;
@@ -73,6 +75,24 @@ class SpectrumUpdateEvent extends AudioPlayerEvent {
 
 class TickerTickEvent extends AudioPlayerEvent {}
 
+class CycleLoopModeEvent extends AudioPlayerEvent {}
+
+class SetAbLoopPointAEvent extends AudioPlayerEvent {
+  final int? posSec;
+  const SetAbLoopPointAEvent([this.posSec]);
+  @override
+  List<Object?> get props => [posSec];
+}
+
+class SetAbLoopPointBEvent extends AudioPlayerEvent {
+  final int? posSec;
+  const SetAbLoopPointBEvent([this.posSec]);
+  @override
+  List<Object?> get props => [posSec];
+}
+
+class ClearAbLoopEvent extends AudioPlayerEvent {}
+
 // State
 class AudioPlayerState extends Equatable {
   final AudioTrack? currentTrack;
@@ -83,6 +103,9 @@ class AudioPlayerState extends Equatable {
   final List<AudioTrack> queue;
   final int queueIndex;
   final String? lastSavedClipId;
+  final LoopMode loopMode;
+  final int? abLoopStartSec;
+  final int? abLoopEndSec;
 
   const AudioPlayerState({
     this.currentTrack,
@@ -93,7 +116,15 @@ class AudioPlayerState extends Equatable {
     this.queue = const [],
     this.queueIndex = 0,
     this.lastSavedClipId,
+    this.loopMode = LoopMode.off,
+    this.abLoopStartSec,
+    this.abLoopEndSec,
   });
+
+  bool get isAbLoopValid =>
+      abLoopStartSec != null &&
+      abLoopEndSec != null &&
+      abLoopStartSec! < abLoopEndSec!;
 
   TranscriptChapter? get activeChapter {
     if (currentTrack == null || currentTrack!.chapters.isEmpty) return null;
@@ -115,6 +146,10 @@ class AudioPlayerState extends Equatable {
     List<AudioTrack>? queue,
     int? queueIndex,
     String? lastSavedClipId,
+    LoopMode? loopMode,
+    int? abLoopStartSec,
+    int? abLoopEndSec,
+    bool clearAbLoop = false,
   }) {
     return AudioPlayerState(
       currentTrack: currentTrack ?? this.currentTrack,
@@ -125,6 +160,11 @@ class AudioPlayerState extends Equatable {
       queue: queue ?? this.queue,
       queueIndex: queueIndex ?? this.queueIndex,
       lastSavedClipId: lastSavedClipId,
+      loopMode: loopMode ?? this.loopMode,
+      abLoopStartSec: clearAbLoop
+          ? null
+          : (abLoopStartSec ?? this.abLoopStartSec),
+      abLoopEndSec: clearAbLoop ? null : (abLoopEndSec ?? this.abLoopEndSec),
     );
   }
 
@@ -138,6 +178,9 @@ class AudioPlayerState extends Equatable {
     queue,
     queueIndex,
     lastSavedClipId,
+    loopMode,
+    abLoopStartSec,
+    abLoopEndSec,
   ];
 }
 
@@ -164,6 +207,10 @@ class AudioPlayerBloc extends Bloc<AudioPlayerEvent, AudioPlayerState> {
     on<SaveTimestampClipEvent>(_onSaveTimestampClip);
     on<SpectrumUpdateEvent>(_onSpectrumUpdate);
     on<TickerTickEvent>(_onTickerTick);
+    on<CycleLoopModeEvent>(_onCycleLoopMode);
+    on<SetAbLoopPointAEvent>(_onSetAbLoopPointA);
+    on<SetAbLoopPointBEvent>(_onSetAbLoopPointB);
+    on<ClearAbLoopEvent>(_onClearAbLoop);
 
     _spectrumSubscription = _dspRepository.getSpectrumStream().listen((
       spectrum,
@@ -303,10 +350,24 @@ class AudioPlayerBloc extends Bloc<AudioPlayerEvent, AudioPlayerState> {
 
   void _onTickerTick(TickerTickEvent event, Emitter<AudioPlayerState> emit) {
     if (!state.isPlaying || state.currentTrack == null) return;
+
+    // Check A-B repeat boundary
+    if (state.loopMode == LoopMode.abRepeat && state.isAbLoopValid) {
+      final nextSec = state.currentPositionSec + 1;
+      if (nextSec >= state.abLoopEndSec!) {
+        emit(state.copyWith(currentPositionSec: state.abLoopStartSec!));
+        return;
+      }
+    }
+
     final nextSec = state.currentPositionSec + 1;
     if (nextSec >= state.currentTrack!.durationSec) {
-      emit(state.copyWith(isPlaying: false, currentPositionSec: 0));
-      _stopTicker();
+      if (state.loopMode == LoopMode.track) {
+        emit(state.copyWith(currentPositionSec: 0));
+      } else {
+        emit(state.copyWith(isPlaying: false, currentPositionSec: 0));
+        _stopTicker();
+      }
     } else {
       emit(state.copyWith(currentPositionSec: nextSec));
       if (nextSec % 5 == 0) {
@@ -316,6 +377,56 @@ class AudioPlayerBloc extends Bloc<AudioPlayerEvent, AudioPlayerState> {
         );
       }
     }
+  }
+
+  void _onCycleLoopMode(
+    CycleLoopModeEvent event,
+    Emitter<AudioPlayerState> emit,
+  ) {
+    final nextMode = switch (state.loopMode) {
+      LoopMode.off => LoopMode.track,
+      LoopMode.track => LoopMode.abRepeat,
+      LoopMode.abRepeat => LoopMode.off,
+    };
+    emit(state.copyWith(loopMode: nextMode));
+  }
+
+  void _onSetAbLoopPointA(
+    SetAbLoopPointAEvent event,
+    Emitter<AudioPlayerState> emit,
+  ) {
+    final pos = event.posSec ?? state.currentPositionSec;
+    int? end = state.abLoopEndSec;
+    if (end != null && pos >= end) {
+      end = null;
+    }
+    emit(
+      state.copyWith(
+        abLoopStartSec: pos,
+        abLoopEndSec: end,
+        loopMode: LoopMode.abRepeat,
+      ),
+    );
+  }
+
+  void _onSetAbLoopPointB(
+    SetAbLoopPointBEvent event,
+    Emitter<AudioPlayerState> emit,
+  ) {
+    final pos = event.posSec ?? state.currentPositionSec;
+    final start = state.abLoopStartSec ?? 0;
+    if (pos <= start) return;
+    emit(
+      state.copyWith(
+        abLoopStartSec: start,
+        abLoopEndSec: pos,
+        loopMode: LoopMode.abRepeat,
+      ),
+    );
+  }
+
+  void _onClearAbLoop(ClearAbLoopEvent event, Emitter<AudioPlayerState> emit) {
+    emit(state.copyWith(loopMode: LoopMode.off, clearAbLoop: true));
   }
 
   @override
